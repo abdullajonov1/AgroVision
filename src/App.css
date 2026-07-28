@@ -1,0 +1,167 @@
+.app {
+  display: flex;
+  width: 100%;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.app__backdrop {
+  display: none;
+}
+
+.app__main {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px 12px;
+  overflow: hidden;
+}
+
+/* Fills remaining viewport under header */
+.app__content {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Home dashboard: fills all leftover space, no empty gap */
+.app__dashboard {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1.75fr) minmax(0, 1fr);
+  gap: 8px;
+}
+
+.app__row {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  width: 100%;
+}
+
+.app__row--mid {
+  grid-template-columns: minmax(0, 1.7fr) minmax(240px, 0.8fr);
+  align-items: stretch;
+}
+
+.app__row--bottom {
+  grid-template-columns: minmax(0, 1.25fr) minmax(340px, 1.15fr);
+  align-items: stretch;
+}
+
+.app__row--mid .map-panel,
+.app__row--mid .region-stats,
+.app__row--bottom .ndvi-chart,
+.app__row--bottom .crops {
+  height: 100%;
+  min-height: 0;
+  max-height: none;
+}
+
+@media (max-width: 1180px) and (min-width: 901px) {
+  .app__row--mid {
+    grid-template-columns: minmax(0, 1.45fr) minmax(220px, 0.9fr);
+  }
+
+  .app__row--bottom {
+    grid-template-columns: minmax(0, 1.15fr) minmax(300px, 1.1fr);
+  }
+}
+
+/* Stacked layout: allow scroll so nothing is clipped */
+@media (max-width: 900px) {
+  .app__main {
+    padding: 10px;
+  }
+
+  .app__content {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .app__dashboard {
+    flex: none;
+    height: auto;
+    min-height: 100%;
+    grid-template-rows: auto auto auto;
+    gap: 8px;
+    padding-bottom: 12px;
+  }
+
+  .app__row--mid,
+  .app__row--bottom {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .app__row--mid .map-panel {
+    min-height: 360px;
+    height: 360px;
+  }
+
+  .app__row--mid .region-stats {
+    min-height: 280px;
+    height: 300px;
+  }
+
+  .app__row--bottom .ndvi-chart,
+  .app__row--bottom .crops {
+    min-height: 260px;
+    height: 280px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .app__backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    background: rgba(8, 20, 14, 0.45);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+
+  .app.is-sidebar-open .app__backdrop {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+@media (max-width: 720px) {
+  .app__main {
+    padding: 8px 10px 10px;
+    gap: 6px;
+  }
+
+  .app__row--mid .map-panel {
+    min-height: 300px;
+    height: 300px;
+  }
+
+  .app__row--bottom .ndvi-chart,
+  .app__row--bottom .crops {
+    min-height: 230px;
+    height: 250px;
+  }
+}
+
+@media (max-width: 480px) {
+  .app__row--mid .map-panel {
+    min-height: 260px;
+    height: 260px;
+  }
+}

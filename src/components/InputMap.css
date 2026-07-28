@@ -1,0 +1,272 @@
+.input-map-card {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.input-map-card__head {
+  box-sizing: border-box;
+  min-height: 68px;
+  display: flex;
+  align-items: center;
+  padding: 14px 18px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  background: color-mix(in srgb, var(--bg) 55%, var(--surface));
+  flex-shrink: 0;
+}
+
+.input-map-card__title {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.input-map-card__title > svg {
+  margin-top: 2px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.input-map-card__title h2 {
+  margin: 0 0 2px;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.input-map-card__title p {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  line-height: 1.3;
+}
+
+.input-map-card__body {
+  position: relative;
+  flex: 1;
+  min-height: 280px;
+  background: var(--bg);
+}
+
+.input-map-card__leaflet {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  background: var(--bg);
+}
+
+.input-map-card__loading {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.input-map-card .leaflet-container {
+  font: inherit;
+  background: var(--bg);
+}
+
+.input-map-label {
+  background: transparent !important;
+  border: none !important;
+}
+
+.input-map-label span {
+  display: inline-block;
+  transform: translate(-50%, -50%);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  font-family: inherit;
+  white-space: nowrap;
+  pointer-events: none;
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.9),
+    0 0 6px rgba(0, 0, 0, 0.65),
+    0 0 1px rgba(0, 0, 0, 1);
+}
+
+[data-theme='light'] .input-map-label span {
+  color: #0a1f14;
+  text-shadow:
+    0 1px 2px rgba(255, 255, 255, 0.95),
+    0 0 4px rgba(255, 255, 255, 0.8);
+}
+
+.input-map-tooltip {
+  padding: 6px 10px !important;
+  border-radius: 8px !important;
+  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent) !important;
+  background: var(--surface) !important;
+  color: var(--text) !important;
+  font: inherit !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  box-shadow: 0 6px 18px rgba(8, 20, 14, 0.18) !important;
+}
+
+.input-map-tooltip::before {
+  border-top-color: var(--surface) !important;
+}
+
+.input-map-card__controls {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 30;
+}
+
+.input-map-card__controls > button,
+.input-map-card__layers > button {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  border: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+}
+
+.input-map-card__controls > button:hover,
+.input-map-card__layers > button:hover,
+.input-map-card__layers > button.is-active {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+}
+
+.input-map-card__layers {
+  position: relative;
+  z-index: 31;
+}
+
+.input-map-card__basemap {
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  min-width: 168px;
+  padding: 8px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  box-shadow: 0 10px 28px rgba(8, 20, 14, 0.18);
+}
+
+.input-map-card__basemap-title {
+  padding: 4px 8px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.input-map-card__basemap button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  background: transparent;
+  text-align: left;
+}
+
+.input-map-card__basemap button:hover,
+.input-map-card__basemap button.is-active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.input-map-card__controls > button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.input-map-card__controls > button.is-active {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+}
+
+.input-map-card__draw-hint {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 35;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  box-shadow: 0 6px 18px rgba(8, 20, 14, 0.14);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.input-map-card .leaflet-container.is-drawing {
+  cursor: crosshair;
+}
+
+.input-map-draw-pt {
+  background: transparent !important;
+  border: none !important;
+}
+
+.input-map-draw-pt span {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #f5a524;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+.input-field-ro {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.input-field-ro.is-empty {
+  color: var(--text-muted);
+  font-weight: 600;
+}

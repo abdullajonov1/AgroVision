@@ -1,0 +1,341 @@
+.crops {
+  container-type: inline-size;
+  container-name: crops;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 12px 14px 10px;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  overflow: hidden;
+}
+
+.crops__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+  flex-shrink: 0;
+}
+
+.crops__header h2 {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crops__badge {
+  min-width: 24px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  display: inline-grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 800;
+  background: var(--accent-soft);
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.crops__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 1.35fr);
+  gap: 12px;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Left chart: always fits, never scrolls */
+.crops__chart-wrap {
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--accent) 8%, transparent), transparent 62%),
+    color-mix(in srgb, var(--bg) 85%, transparent);
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  padding: 8px;
+  overflow: hidden;
+}
+
+.crops__chart {
+  position: relative;
+  flex: 0 0 auto;
+  aspect-ratio: 1;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.crops__glow {
+  position: absolute;
+  inset: 18%;
+  border-radius: 50%;
+  opacity: 0.14;
+  filter: blur(18px);
+  pointer-events: none;
+  transition: background 0.25s ease, opacity 0.25s ease;
+}
+
+.crops__svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  position: relative;
+  z-index: 1;
+  overflow: visible;
+}
+
+.crops__slice {
+  cursor: pointer;
+  transition: stroke-width 0.2s ease, opacity 0.2s ease;
+}
+
+.crops__slice.is-dim {
+  opacity: 0.28;
+}
+
+.crops__slice.is-active {
+  opacity: 1;
+}
+
+.crops__slice-halo {
+  pointer-events: none;
+}
+
+.crops__center {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  text-align: center;
+  padding: 2px;
+  animation: crops-center-in 0.22s ease;
+}
+
+@keyframes crops-center-in {
+  from {
+    opacity: 0.4;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.crops__center strong {
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--text);
+  transition: color 0.2s ease;
+}
+
+.crops__center span {
+  font-weight: 700;
+  color: var(--text);
+  margin-top: 3px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crops__center em {
+  font-style: normal;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-top: 1px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crops__legend {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-right: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--text-light) 55%, transparent) transparent;
+}
+
+.crops__legend::-webkit-scrollbar {
+  width: 4px;
+}
+
+.crops__legend::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--text-light) 55%, transparent);
+  border-radius: 999px;
+}
+
+.crops__legend li {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 6px 8px;
+  border-radius: 10px;
+  transition: background 0.15s ease, transform 0.15s ease;
+  flex: 0 0 auto;
+  overflow: hidden;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.crops__legend li.is-active,
+.crops__legend li:hover {
+  background: var(--accent-soft);
+}
+
+.crops__legend-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.crops__legend li.is-active .crops__legend-icon {
+  transform: scale(1.05);
+}
+
+.crops__legend-info {
+  min-width: 0;
+  width: 100%;
+  overflow: hidden;
+}
+
+.crops__legend-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+  min-width: 0;
+  width: 100%;
+}
+
+.crops__legend-name {
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.crops__legend-bar {
+  height: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--border) 75%, transparent);
+  overflow: hidden;
+  width: 100%;
+  min-width: 0;
+}
+
+.crops__legend-bar span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.25s ease;
+}
+
+.crops__legend-area {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.crops__legend-pct {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text);
+  white-space: nowrap;
+  transition: color 0.15s ease;
+}
+
+@container crops (max-width: 520px) {
+  .crops__body {
+    grid-template-columns: minmax(0, 0.9fr) minmax(160px, 1.3fr);
+    gap: 10px;
+  }
+
+  .crops__legend-name {
+    font-size: 11px;
+  }
+
+  .crops__legend-area {
+    font-size: 9px;
+  }
+}
+
+@container crops (max-width: 420px) {
+  .crops__body {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(140px, 0.85fr) minmax(0, 1fr);
+    gap: 8px;
+  }
+}
+
+@media (max-width: 560px) {
+  .crops {
+    padding: 12px;
+  }
+
+  .crops__body {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .crops__chart-wrap {
+    min-height: 150px;
+    padding: 10px;
+  }
+
+  .crops__legend {
+    max-height: 180px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crops__center {
+    animation: none;
+  }
+
+  .crops__slice,
+  .crops__legend-icon,
+  .crops__legend-bar span {
+    transition: none;
+  }
+}

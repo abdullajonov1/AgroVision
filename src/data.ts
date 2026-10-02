@@ -70,6 +70,14 @@ export const featureImportance = [
   { key: 'history', weight: 0.12 },
 ]
 
+export const limeImportance = [
+  { key: 'ndvi', weight: 0.21 },
+  { key: 'rainfall', weight: 0.27 },
+  { key: 'temp', weight: 0.19 },
+  { key: 'soil', weight: 0.17 },
+  { key: 'history', weight: 0.16 },
+]
+
 export const droneShots = [
   { id: 'd1', regionId: 'kashkadarya', date: '2025-06-05', label: 'Qarshi tumani — A12' },
   { id: 'd2', regionId: 'jizzakh', date: '2025-06-04', label: 'Zomin tumani — B04' },

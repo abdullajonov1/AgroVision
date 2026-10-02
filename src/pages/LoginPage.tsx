@@ -5,15 +5,31 @@ import './LoginPage.css'
 
 export function LoginPage() {
   const { t } = useI18n()
-  const { login } = useAuth()
+  const { login, register } = useAuth()
+  const [mode, setMode] = useState<'login' | 'register'>('login')
   const [username, setUsername] = useState('admin')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState(false)
+  const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [password2, setPassword2] = useState('')
+  const [error, setError] = useState('')
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault()
-    const ok = login(username, password)
-    setError(!ok)
+    if (mode === 'login') {
+      setError(login(username, password) ? '' : 'auth')
+      return
+    }
+    if (password !== password2) {
+      setError('password2')
+      return
+    }
+    const code = register({ name, phone, login: username, password })
+    if (code) {
+      setError(code)
+      return
+    }
+    setError(login(username, password) ? '' : 'auth')
   }
 
   return (
@@ -40,7 +56,25 @@ export function LoginPage() {
           </div>
         </div>
 
-        <h2>{t('login.title')}</h2>
+        <h2>{mode === 'login' ? t('login.title') : t('login.register')}</h2>
+
+        {mode === 'register' ? (
+          <>
+            <label className="login__field">
+              <span>{t('login.name')}</span>
+              <input value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />
+            </label>
+            <label className="login__field">
+              <span>{t('login.phone')}</span>
+              <input
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                autoComplete="tel"
+                inputMode="tel"
+              />
+            </label>
+          </>
+        ) : null}
 
         <label className="login__field">
           <span>{t('login.username')}</span>
@@ -57,17 +91,44 @@ export function LoginPage() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
+            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
           />
         </label>
 
-        {error && <div className="login__error">{t('login.error')}</div>}
+        {mode === 'register' ? (
+          <label className="login__field">
+            <span>{t('login.password2')}</span>
+            <input
+              type="password"
+              value={password2}
+              onChange={(e) => setPassword2(e.target.value)}
+              autoComplete="new-password"
+            />
+          </label>
+        ) : null}
+
+        {error ? <div className="login__error">{t(`login.err.${error}`)}</div> : null}
 
         <button type="submit" className="login__submit">
-          {t('login.submit')}
+          {mode === 'login' ? t('login.submit') : t('login.regSubmit')}
         </button>
 
-        <p className="login__hint">{t('login.hint')}</p>
+        <button
+          type="button"
+          className="login__switch"
+          onClick={() => {
+            setMode((v) => (v === 'login' ? 'register' : 'login'))
+            setError('')
+            setPassword('')
+            setPassword2('')
+            if (mode === 'login') setUsername('')
+            else setUsername('admin')
+          }}
+        >
+          {mode === 'login' ? t('login.noAccount') : t('login.haveAccount')}
+        </button>
+
+        {mode === 'login' ? <p className="login__hint">{t('login.hint')}</p> : null}
       </form>
     </div>
   )

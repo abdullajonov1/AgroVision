@@ -9,6 +9,7 @@ import {
 
 const AUTH_KEY = 'agrovision-auth'
 const PROFILE_KEY = 'agrovision-profile'
+const ACCOUNTS_KEY = 'agrovision-accounts'
 
 export type UserProfile = {
   name: string
@@ -19,12 +20,48 @@ export type UserProfile = {
   avatar: string | null
 }
 
+export type RegisterInput = {
+  name: string
+  phone: string
+  login: string
+  password: string
+}
+
+type StoredAccount = {
+  name: string
+  phone: string
+  login: string
+  passwordHash: string
+}
+
 type AuthContextValue = {
   isAuthenticated: boolean
   profile: UserProfile
   login: (username: string, password: string) => boolean
+  register: (input: RegisterInput) => string | null
   logout: () => void
   updateProfile: (patch: Partial<UserProfile>) => void
+}
+
+function hashPassword(password: string): string {
+  let h = 2166136261
+  const value = `agrovision:${password}`
+  for (let i = 0; i < value.length; i++) {
+    h ^= value.charCodeAt(i)
+    h = Math.imul(h, 16777619)
+  }
+  return (h >>> 0).toString(16).padStart(8, '0')
+}
+
+function readAccounts(): StoredAccount[] {
+  try {
+    const raw = localStorage.getItem(ACCOUNTS_KEY)
+    if (!raw) return []
+    const list = JSON.parse(raw) as StoredAccount[]
+    return Array.isArray(list) ? list : []
+  } catch {
+    return []
+  }
 }
 
 const defaultProfile: UserProfile = {
@@ -92,12 +129,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile>(readProfile)
 
   const login = useCallback((username: string, password: string) => {
-    const ok = username.trim() === 'admin' && password === 'admin123'
-    if (ok) {
+    const name = username.trim()
+    if (name === 'admin' && password === 'admin123') {
       sessionStorage.setItem(AUTH_KEY, '1')
       setAuth(true)
+      setProfile((prev) => {
+        if (prev.login === 'admin') return prev
+        const next = { ...defaultProfile }
+        localStorage.setItem(PROFILE_KEY, JSON.stringify(next))
+        return next
+      })
+      return true
     }
-    return ok
+    const account = readAccounts().find(
+      (item) => item.login === name && item.passwordHash === hashPassword(password),
+    )
+    if (!account) return false
+    sessionStorage.setItem(AUTH_KEY, '1')
+    setAuth(true)
+    const next: UserProfile = {
+      ...defaultProfile,
+      name: account.name,
+      login: account.login,
+      phone: account.phone,
+      email: '',
+      role: 'user',
+      avatar: null,
+    }
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(next))
+    setProfile(next)
+    return true
+  }, [])
+
+  const register = useCallback((input: RegisterInput) => {
+    const name = input.name.trim()
+    const phone = input.phone.trim()
+    const loginName = input.login.trim()
+    if (name.length < 2) return 'name'
+    if (phone.replace(/\D/g, '').length < 9) return 'phone'
+    if (!/^[a-zA-Z0-9._-]{3,32}$/.test(loginName) || loginName === 'admin') return 'login'
+    if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(input.password)) return 'password'
+    const accounts = readAccounts()
+    if (accounts.some((item) => item.login.toLowerCase() === loginName.toLowerCase())) {
+      return 'taken'
+    }
+    accounts.push({
+      name,
+      phone,
+      login: loginName,
+      passwordHash: hashPassword(input.password),
+    })
+    localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts))
+    return null
   }, [])
 
   const logout = useCallback(() => {
@@ -123,8 +206,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const value = useMemo(
-    () => ({ isAuthenticated, profile, login, logout, updateProfile }),
-    [isAuthenticated, profile, login, logout, updateProfile],
+    () => ({ isAuthenticated, profile, login, register, logout, updateProfile }),
+    [isAuthenticated, profile, login, register, logout, updateProfile],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

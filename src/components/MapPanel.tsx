@@ -9,6 +9,8 @@ import {
 import type { Feature, FeatureCollection, Geometry } from 'geojson'
 import type { Layer, PathOptions, LeafletMouseEvent } from 'leaflet'
 import L from 'leaflet'
+import booleanPointInPolygon from '@turf/boolean-point-in-polygon'
+import { point } from '@turf/helpers'
 import {
   Filter,
   Plus,
@@ -22,6 +24,7 @@ import {
   Mountain,
   CalendarDays,
   ChevronDown,
+  Crosshair,
 } from 'lucide-react'
 import { useI18n } from '../i18n/I18nContext'
 import { useTheme } from '../theme/ThemeContext'
@@ -213,7 +216,13 @@ function InvalidateSize() {
   return null
 }
 
-export function MapPanel() {
+function fieldEstimate(ndvi: number) {
+  const yieldT = Math.round((2.6 + ndvi * 3.6) * 10) / 10
+  const confidence = Math.round(Math.min(0.92, 0.48 + ndvi * 0.55) * 100)
+  return { yieldT, confidence }
+}
+
+export function MapPanel({ tools = false }: { tools?: boolean }) {
   const { t, locale } = useI18n()
   const { theme } = useTheme()
   const { index } = useVegIndex()
@@ -234,6 +243,10 @@ export function MapPanel() {
   const [mapDate, setMapDate] = useState(() => new Date(2025, 5, 9))
   const [calOpen, setCalOpen] = useState(false)
   const [filterOpen, setFilterOpen] = useState(false)
+  const [latText, setLatText] = useState('')
+  const [lngText, setLngText] = useState('')
+  const [coordError, setCoordError] = useState('')
+  const [coordPoint, setCoordPoint] = useState<[number, number] | null>(null)
   const geoJsonRef = useRef<L.GeoJSON | null>(null)
   const fieldsRef = useRef<L.GeoJSON | null>(null)
   const toolbarRef = useRef<HTMLDivElement>(null)
@@ -455,6 +468,30 @@ export function MapPanel() {
     })
   }, [regions, locale, selectedDistrictId, selectedRegionId])
 
+  const selectedField = fieldsData?.features.find((f) => f.properties.id === selectedFieldId)
+  const fieldCard = selectedField ? fieldEstimate(selectedField.properties.ndvi) : null
+
+  const goToCoord = () => {
+    const lat = Number(latText.trim().replace(',', '.'))
+    const lng = Number(lngText.trim().replace(',', '.'))
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      setCoordError(t('map.coord.invalid'))
+      setCoordPoint(null)
+      return
+    }
+    setCoordPoint([lat, lng])
+    const hit = districts?.features.find((f) => booleanPointInPolygon(point([lng, lat]), f as never))
+    if (!hit?.properties.regionId) {
+      setCoordError(t('map.coord.outside'))
+      mapInstance?.setView([lat, lng], 8)
+      return
+    }
+    setCoordError('')
+    setSelectedRegionId(hit.properties.regionId)
+    setSelectedDistrictId(String(hit.properties.id))
+    mapInstance?.setView([lat, lng], 12)
+  }
+
   const legendTitle = t('map.legend').replace('{index}', index)
 
   return (
@@ -509,6 +546,18 @@ export function MapPanel() {
                   })}
                 />
               ))}
+            {coordPoint ? (
+              <Marker
+                position={coordPoint}
+                interactive={false}
+                icon={L.divIcon({
+                  className: 'map-coord-pin',
+                  html: '<span></span>',
+                  iconSize: [14, 14],
+                  iconAnchor: [7, 7],
+                })}
+              />
+            ) : null}
             <FitToData data={viewData} maxZoom={fitMaxZoom} enabled={!selectedFieldId} />
             <FitToField fields={fieldsData} fieldId={selectedFieldId} />
             <MapReady onReady={onMapReady} />
@@ -596,6 +645,53 @@ export function MapPanel() {
           basemap={basemap}
           onBasemapChange={setBasemap}
         />
+
+        {tools ? (
+          <div className="map-tools">
+            {fieldCard && selectedField ? (
+              <article className="map-tools__field">
+                <strong>
+                  {t('map.fieldForecast')} {selectedField.properties.id.split('-').pop()?.replace(/^f/, '')}
+                </strong>
+                <span>
+                  {fieldCard.yieldT.toFixed(1)} {t('ai.unit')} · {fieldCard.confidence}%
+                </span>
+              </article>
+            ) : null}
+            <form
+              className="map-tools__coord"
+              onSubmit={(e) => {
+                e.preventDefault()
+                goToCoord()
+              }}
+            >
+              <div className="map-tools__coord-title">
+                <Crosshair size={13} />
+                {t('map.coord.title')}
+              </div>
+              <label>
+                {t('map.coord.lat')}
+                <input
+                  value={latText}
+                  inputMode="decimal"
+                  onChange={(e) => setLatText(e.target.value)}
+                  placeholder="38.86"
+                />
+              </label>
+              <label>
+                {t('map.coord.lng')}
+                <input
+                  value={lngText}
+                  inputMode="decimal"
+                  onChange={(e) => setLngText(e.target.value)}
+                  placeholder="65.79"
+                />
+              </label>
+              {coordError ? <em>{coordError}</em> : null}
+              <button type="submit">{t('map.coord.go')}</button>
+            </form>
+          </div>
+        ) : null}
 
         <div className="map-panel__legend">
           <div className="map-panel__legend-title">{legendTitle}</div>

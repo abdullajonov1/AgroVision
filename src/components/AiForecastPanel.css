@@ -346,6 +346,54 @@
   background: linear-gradient(90deg, #6dd68a, #1f9d4b);
 }
 
+.ai-panel__bar-track span.is-lime {
+  background: linear-gradient(90deg, #93c5fd, #3d6fd4);
+}
+
+.ai-panel__review {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: color-mix(in srgb, #f5a524 14%, transparent);
+  border: 1px solid color-mix(in srgb, #f5a524 35%, transparent);
+}
+
+.ai-panel__review strong {
+  display: block;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.ai-panel__review p {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+.ai-panel__review-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.ai-panel__review-actions button {
+  flex: 1;
+  min-height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.ai-panel__review-actions button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .ai-panel__empty {
   margin-top: auto;
   padding: 16px 12px;

@@ -6,7 +6,7 @@ export function MapAiPage() {
   return (
     <div className="map-ai">
       <div className="map-ai__map">
-        <MapPanel />
+        <MapPanel tools />
       </div>
       <AiForecastPanel />
     </div>

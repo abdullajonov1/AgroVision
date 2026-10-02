@@ -10,7 +10,8 @@ import {
 } from 'lucide-react'
 import { useI18n } from '../i18n/I18nContext'
 import { useGeo } from '../context/GeoContext'
-import { featureImportance, ndviByRegionId, regionStats } from '../data'
+import { featureImportance, limeImportance, ndviByRegionId, regionStats } from '../data'
+import { saveForecastReport, setReportReview, type ReportReview } from '../utils/reportArchive'
 import './AiForecastPanel.css'
 
 type Crop = 'wheat' | 'cotton'
@@ -25,6 +26,7 @@ type Result = {
 }
 
 const PILOT_REGIONS = new Set(['kashkadarya', 'jizzakh'])
+const LOW_CONFIDENCE = 0.75
 
 function mockResult(crop: Crop, regionId: string, fallback: boolean): Result {
   if (fallback) {
@@ -53,12 +55,14 @@ function mockResult(crop: Crop, regionId: string, fallback: boolean): Result {
 
 export function AiForecastPanel() {
   const { t } = useI18n()
-  const { selectedRegionId, setSelectedRegionId } = useGeo()
+  const { selectedRegionId, selectedFieldId, setSelectedRegionId } = useGeo()
   const [crop, setCrop] = useState<Crop>('wheat')
   const [running, setRunning] = useState(false)
   const [error, setError] = useState('')
   const [ndviFallback, setNdviFallback] = useState(false)
   const [result, setResult] = useState<Result | null>(null)
+  const [reportId, setReportId] = useState<string | null>(null)
+  const [review, setReview] = useState<ReportReview | null>(null)
 
   const regionId = selectedRegionId ?? ''
 
@@ -75,6 +79,8 @@ export function AiForecastPanel() {
   useEffect(() => {
     setResult(null)
     setError('')
+    setReportId(null)
+    setReview(null)
   }, [crop, regionId, ndviFallback])
 
   const run = () => {
@@ -85,7 +91,20 @@ export function AiForecastPanel() {
     setError('')
     setRunning(true)
     window.setTimeout(() => {
-      setResult(mockResult(crop, regionId, ndviFallback))
+      const next = mockResult(crop, regionId, ndviFallback)
+      setResult(next)
+      const id = saveForecastReport({
+        regionId,
+        crop,
+        yield: next.yield,
+        confidence: next.confidence,
+        r2: next.r2,
+        mae: next.mae,
+        rmse: next.rmse,
+        fieldId: selectedFieldId,
+      })
+      setReportId(id)
+      setReview(null)
       setRunning(false)
     }, ndviFallback ? 600 : 1400)
   }
@@ -231,6 +250,61 @@ export function AiForecastPanel() {
                 ))}
               </div>
             </section>
+
+            <section className="ai-panel__block">
+              <h3>{t('ai.lime')}</h3>
+              <p className="ai-panel__block-hint">{t('ai.limeHint')}</p>
+              <div className="ai-panel__bars">
+                {limeImportance.map((f) => (
+                  <div key={f.key} className="ai-panel__bar">
+                    <div className="ai-panel__bar-top">
+                      <span>{t(`ai.feature.${f.key}`)}</span>
+                      <b>{Math.round(f.weight * 100)}%</b>
+                    </div>
+                    <div className="ai-panel__bar-track">
+                      <span className="is-lime" style={{ width: `${f.weight * 100}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {result.confidence < LOW_CONFIDENCE && !result.fallback ? (
+              <section className="ai-panel__review">
+                <strong>{t('ai.review.title')}</strong>
+                <p>
+                  {review === 'confirmed'
+                    ? t('ai.review.confirmed')
+                    : review === 'escalated'
+                      ? t('ai.review.escalated')
+                      : t('ai.review.text')}
+                </p>
+                {review ? null : (
+                  <div className="ai-panel__review-actions">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!reportId) return
+                        setReportReview(reportId, 'confirmed')
+                        setReview('confirmed')
+                      }}
+                    >
+                      {t('ai.review.confirm')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!reportId) return
+                        setReportReview(reportId, 'escalated')
+                        setReview('escalated')
+                      }}
+                    >
+                      {t('ai.review.escalate')}
+                    </button>
+                  </div>
+                )}
+              </section>
+            ) : null}
           </>
         ) : (
           <div className="ai-panel__empty">{t('ai.empty')}</div>

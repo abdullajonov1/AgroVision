@@ -84,7 +84,7 @@ export default function App() {
       content = <SettingsPage />
       break
     default:
-      content = <HomePage />
+      content = <HomePage onNavigate={navigate} />
   }
 
   return (

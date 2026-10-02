@@ -21,6 +21,8 @@
 .login__card {
   position: relative;
   width: min(420px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow: auto;
   background: var(--surface);
   border-radius: 18px;
   padding: 28px 26px 22px;
@@ -112,6 +114,18 @@
 
 .login__submit:hover {
   background: var(--accent-hover);
+}
+
+.login__switch {
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.login__switch:hover {
+  text-decoration: underline;
 }
 
 .login__hint {

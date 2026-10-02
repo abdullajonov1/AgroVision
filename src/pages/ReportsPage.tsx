@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Download,
   FileBarChart2,
@@ -9,18 +9,84 @@ import {
 } from 'lucide-react'
 import { useI18n } from '../i18n/I18nContext'
 import { reportRows, regionStats } from '../data'
+import {
+  readReportReviews,
+  readSavedReports,
+  setReportReview,
+  type ReportReview,
+} from '../utils/reportArchive'
 import './pages.css'
 import './TablePages.css'
+
+type ReportView = {
+  id: string
+  regionId: string
+  crop: 'wheat' | 'cotton'
+  yield: number
+  confidence: number
+  date: string
+  r2: number | null
+  mae: number | null
+  rmse: number | null
+  saved: boolean
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+}
 
 export function ReportsPage() {
   const { t } = useI18n()
   const [crop, setCrop] = useState('all')
   const [region, setRegion] = useState('all')
   const [query, setQuery] = useState('')
+  const [savedTick, setSavedTick] = useState(0)
+  const [openId, setOpenId] = useState<string | null>(null)
+  const [reviews, setReviews] = useState<Record<string, ReportReview>>({})
+
+  useEffect(() => {
+    const sync = () => {
+      setSavedTick((v) => v + 1)
+      setReviews(readReportReviews())
+    }
+    sync()
+    window.addEventListener('agrovision-reports', sync)
+    window.addEventListener('storage', sync)
+    return () => {
+      window.removeEventListener('agrovision-reports', sync)
+      window.removeEventListener('storage', sync)
+    }
+  }, [])
+
+  const allRows = useMemo(() => {
+    const saved: ReportView[] = readSavedReports().map((r) => ({
+      id: r.id,
+      regionId: r.regionId,
+      crop: r.crop,
+      yield: r.yield,
+      confidence: r.confidence,
+      date: r.date,
+      r2: r.r2,
+      mae: r.mae,
+      rmse: r.rmse,
+      saved: true,
+    }))
+    const seed: ReportView[] = reportRows.map((r) => ({
+      ...r,
+      r2: null,
+      mae: null,
+      rmse: null,
+      saved: false,
+    }))
+    return [...saved, ...seed]
+  }, [savedTick])
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase()
-    return reportRows.filter((r) => {
+    return allRows.filter((r) => {
       if (crop !== 'all' && r.crop !== crop) return false
       if (region !== 'all' && r.regionId !== region) return false
       if (!q) return true
@@ -28,7 +94,26 @@ export function ReportsPage() {
       const cropName = t(`ai.crop.${r.crop}`).toLowerCase()
       return regionName.includes(q) || cropName.includes(q) || r.date.includes(q)
     })
-  }, [crop, region, query, t])
+  }, [allRows, crop, region, query, t])
+
+  const open = rows.find((r) => r.id === openId) ?? null
+
+  const downloadHtml = (list: ReportView[]) => {
+    const body = list
+      .map((r) => {
+        const conf = Math.round(r.confidence * 100)
+        return `<tr><td>${escapeHtml(t(`region.${r.regionId}`))}</td><td>${escapeHtml(t(`ai.crop.${r.crop}`))}</td><td>${r.yield.toFixed(1)}</td><td>${conf}%</td><td>${escapeHtml(r.date)}</td><td>${r.r2?.toFixed(2) ?? '—'}</td><td>${r.mae?.toFixed(2) ?? '—'}</td><td>${r.rmse?.toFixed(2) ?? '—'}</td></tr>`
+      })
+      .join('')
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escapeHtml(t('reports.detail'))}</title></head><body><h1>${escapeHtml(t('reports.detail'))}</h1><table border="1" cellpadding="6"><thead><tr><th>${escapeHtml(t('reports.col.region'))}</th><th>${escapeHtml(t('reports.col.crop'))}</th><th>${escapeHtml(t('reports.col.yield'))}</th><th>${escapeHtml(t('reports.col.confidence'))}</th><th>${escapeHtml(t('reports.col.date'))}</th><th>R2</th><th>MAE</th><th>RMSE</th></tr></thead><tbody>${body}</tbody></table></body></html>`
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'agrovision-report.html'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
 
   const stats = useMemo(() => {
     if (!rows.length) {
@@ -115,10 +200,16 @@ export function ReportsPage() {
             <h2>{t('reports.title')}</h2>
             <p>{t('reports.hint')}</p>
           </div>
-          <button type="button" className="btn btn--primary" onClick={exportCsv}>
-            <Download size={15} />
-            {t('reports.export')}
-          </button>
+          <div className="table-panel__actions">
+            <button type="button" className="btn btn--ghost" onClick={() => downloadHtml(open ? [open] : rows)}>
+              <Download size={15} />
+              {t('reports.downloadHtml')}
+            </button>
+            <button type="button" className="btn btn--primary" onClick={exportCsv}>
+              <Download size={15} />
+              {t('reports.export')}
+            </button>
+          </div>
         </header>
 
         <div className="table-panel__toolbar">
@@ -151,6 +242,81 @@ export function ReportsPage() {
           </label>
         </div>
 
+        {open ? (
+          <article className="report-detail">
+            <header>
+              <div>
+                <h3>{t('reports.detail')}</h3>
+                <p>
+                  {t(`region.${open.regionId}`)} · {t(`ai.crop.${open.crop}`)} · {open.date}
+                  {open.saved ? ` · ${t('reports.saved')}` : ''}
+                </p>
+              </div>
+              <button type="button" onClick={() => setOpenId(null)}>
+                {t('reports.close')}
+              </button>
+            </header>
+            <ul>
+              <li>
+                <span>{t('reports.col.yield')}</span>
+                <b>
+                  {open.yield.toFixed(1)} {t('ai.unit')}
+                </b>
+              </li>
+              <li>
+                <span>{t('reports.col.confidence')}</span>
+                <b>{Math.round(open.confidence * 100)}%</b>
+              </li>
+              <li>
+                <span>R²</span>
+                <b>{open.r2?.toFixed(2) ?? '—'}</b>
+              </li>
+              <li>
+                <span>MAE</span>
+                <b>{open.mae?.toFixed(2) ?? '—'}</b>
+              </li>
+              <li>
+                <span>RMSE</span>
+                <b>{open.rmse?.toFixed(2) ?? '—'}</b>
+              </li>
+            </ul>
+            {open.r2 == null ? <p className="report-detail__note">{t('reports.metricsMissing')}</p> : null}
+            {open.confidence < 0.75 ? (
+              <div className="report-detail__review">
+                <p>
+                  {reviews[open.id] === 'confirmed'
+                    ? t('ai.review.confirmed')
+                    : reviews[open.id] === 'escalated'
+                      ? t('ai.review.escalated')
+                      : t('ai.review.text')}
+                </p>
+                {reviews[open.id] ? null : (
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setReportReview(open.id, 'confirmed')
+                        setReviews(readReportReviews())
+                      }}
+                    >
+                      {t('ai.review.confirm')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setReportReview(open.id, 'escalated')
+                        setReviews(readReportReviews())
+                      }}
+                    >
+                      {t('ai.review.escalate')}
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : null}
+          </article>
+        ) : null}
+
         <div className="table-panel__scroll">
           <table className="rich-table">
             <thead>
@@ -160,6 +326,7 @@ export function ReportsPage() {
                 <th>{t('reports.col.yield')}</th>
                 <th>{t('reports.col.confidence')}</th>
                 <th>{t('reports.col.date')}</th>
+                <th />
               </tr>
             </thead>
             <tbody>
@@ -186,12 +353,17 @@ export function ReportsPage() {
                       </div>
                     </td>
                     <td className="muted">{r.date}</td>
+                    <td>
+                      <button type="button" className="report-open" onClick={() => setOpenId(r.id)}>
+                        {t('reports.detail')}
+                      </button>
+                    </td>
                   </tr>
                 )
               })}
               {!rows.length ? (
                 <tr>
-                  <td colSpan={5} className="rich-table__empty">
+                  <td colSpan={6} className="rich-table__empty">
                     {t('reports.empty')}
                   </td>
                 </tr>

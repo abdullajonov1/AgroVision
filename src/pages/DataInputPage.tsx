@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { Wheat, Flower2, MapPinned, CalendarRange, Save, RotateCcw } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { Wheat, Flower2, MapPinned, CalendarRange, Save, RotateCcw, CircleHelp } from 'lucide-react'
 import { useI18n } from '../i18n/I18nContext'
 import { useGeo } from '../context/GeoContext'
 import { regionStats } from '../data'
@@ -21,6 +21,9 @@ export function DataInputPage() {
   const [to, setTo] = useState('2025-06-09')
   const [errors, setErrors] = useState<Errors>({})
   const [ok, setOk] = useState(false)
+  const [guideOpen, setGuideOpen] = useState(false)
+  const [job, setJob] = useState<'idle' | 'queued' | 'running' | 'done'>('idle')
+  const jobTimers = useRef<number[]>([])
 
   const regions = useMemo(
     () => regionStats.map((r) => ({ id: r.id, label: t(`region.${r.id}`) })),
@@ -37,6 +40,12 @@ export function DataInputPage() {
       }))
       .sort((a, b) => a.label.localeCompare(b.label))
   }, [districts, region])
+
+  useEffect(() => {
+    return () => {
+      jobTimers.current.forEach((id) => window.clearTimeout(id))
+    }
+  }, [])
 
   useEffect(() => {
     if (!district || !districts) return
@@ -59,6 +68,9 @@ export function DataInputPage() {
     setTo('2025-06-09')
     setErrors({})
     setOk(false)
+    jobTimers.current.forEach((id) => window.clearTimeout(id))
+    jobTimers.current = []
+    setJob('idle')
   }
 
   const onSubmit = (e: FormEvent) => {
@@ -73,9 +85,19 @@ export function DataInputPage() {
     setErrors(next)
     if (Object.keys(next).length) {
       setOk(false)
+      setJob('idle')
       return
     }
-    setOk(true)
+    setOk(false)
+    setJob('queued')
+    jobTimers.current.forEach((id) => window.clearTimeout(id))
+    jobTimers.current = [
+      window.setTimeout(() => setJob('running'), 400),
+      window.setTimeout(() => {
+        setJob('done')
+        setOk(true)
+      }, 1200),
+    ]
   }
 
   const fieldDisplay = fieldId
@@ -93,7 +115,21 @@ export function DataInputPage() {
               <h2>{t('input.title')}</h2>
               <p>{t('input.hint')}</p>
             </div>
+            <button
+              type="button"
+              className="input-guide-btn"
+              onClick={() => setGuideOpen((v) => !v)}
+            >
+              <CircleHelp size={14} />
+              {t('input.guide')}
+            </button>
           </header>
+
+          <div className={`input-job input-job--${job}`}>
+            <span>{t('input.status.label')}</span>
+            <b>{t(`input.status.${job}`)}</b>
+          </div>
+          {guideOpen ? <p className="input-guide">{t('input.guide.body')}</p> : null}
 
           <div className="input-panel__body">
             <section className="input-section">
